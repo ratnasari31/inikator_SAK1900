@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Monitoring Indikator Ketenagakerjaan Sakernas</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header Navbar -->
+    <header class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-md border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2.5 bg-brand-600 rounded-xl text-white shadow-lg shadow-brand-600/30">
+                        <i class="fa-solid fa-chart-line text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold tracking-tight text-white">Monitoring Indikator Ketenagakerjaan</h1>
+                        <p class="text-xs text-slate-300">Survei Angkatan Kerja Nasional (Sakernas) - Provinsi Kep. Bangka Belitung</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3 text-xs">
+                    <span id="data-status" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span class="w-2 h-2 mr-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                        Data Fallback (Simulasi)
+                    </span>
+                    <button onclick="fetchData()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-lg transition-colors border border-slate-600 flex items-center gap-1.5 font-medium">
+                        <i class="fa-solid fa-rotate text-xs"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-grow w-full">
+
+        <!-- Filter Bar -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+            <div class="flex items-center gap-2 mb-4 text-slate-700 font-semibold border-b border-slate-100 pb-3">
+                <i class="fa-solid fa-sliders text-brand-600"></i>
+                <span>Filter Indicator Data</span>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <!-- Periode Lalu -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Periode Lalu</label>
+                    <select id="filter-periode-lalu" class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-sm rounded-xl focus:ring-brand-500 focus:border-brand-500 p-2.5 outline-none transition-all">
+                        <option value="Agustus 2023" selected>Agustus 2023</option>
+                        <option value="Februari 2024">Februari 2024</option>
+                        <option value="Agustus 2024">Agustus 2024</option>
+                    </select>
+                </div>
+
+                <!-- Periode Sekarang -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Periode Sekarang</label>
+                    <select id="filter-periode-sekarang" class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-sm rounded-xl focus:ring-brand-500 focus:border-brand-500 p-2.5 outline-none transition-all">
+                        <option value="Februari 2024">Februari 2024</option>
+                        <option value="Agustus 2024">Agustus 2024</option>
+                        <option value="Februari 2025" selected>Februari 2025</option>
+                    </select>
+                </div>
+
+                <!-- Jenis Kelamin -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Jenis Kelamin</label>
+                    <select id="filter-jk" class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-sm rounded-xl focus:ring-brand-500 focus:border-brand-500 p-2.5 outline-none transition-all">
+                        <option value="TOTAL" selected>Total (L+P)</option>
+                        <option value="Laki-laki">Laki-laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                    </select>
+                </div>
+
+                <!-- Tipe Wilayah -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Tipe Wilayah</label>
+                    <select id="filter-wilayah" class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-sm rounded-xl focus:ring-brand-500 focus:border-brand-500 p-2.5 outline-none transition-all">
+                        <option value="TOTAL" selected>Total (Kawasan)</option>
+                        <option value="Perkotaan">Perkotaan</option>
+                        <option value="Perdesaan">Perdesaan</option>
+                    </select>
+                </div>
+
+                <!-- Kabupaten / Kota (TAMBAHAN FILTER) -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Kabupaten / Kota</label>
+                    <select id="filter-kabupaten" class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-sm rounded-xl focus:ring-brand-500 focus:border-brand-500 p-2.5 outline-none transition-all font-medium text-slate-800">
+                        <option value="TOTAL" selected>TOTAL (Provinsi BABEL)</option>
+                        <option value="Kab. Bangka">Kabupaten Bangka</option>
+                        <option value="Kab. Belitung">Kabupaten Belitung</option>
+                        <option value="Kab. Bangka Selatan">Kabupaten Bangka Selatan</option>
+                        <option value="Kab. Bangka Tengah">Kabupaten Bangka Tengah</option>
+                        <option value="Kab. Bangka Barat">Kabupaten Bangka Barat</option>
+                        <option value="Kab. Belitung Timur">Kabupaten Belitung Timur</option>
+                        <option value="Kota Pangkalpinang">Kota Pangkalpinang</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key KPI Summary Cards (TPT & TPAK) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- TPAK Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 relative overflow-hidden">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Indikator Utama</span>
+                        <h3 class="text-lg font-bold text-slate-800 mt-0.5">Tingkat Partisipasi Angkatan Kerja (TPAK)</h3>
+                    </div>
+                    <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                        <i class="fa-solid fa-users-gear text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-baseline gap-3">
+                    <span id="tpak-current" class="text-3xl font-extrabold text-slate-900">0.00%</span>
+                    <span id="tpak-change" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                        <i class="fa-solid fa-arrow-up mr-1"></i> 0.00%
+                    </span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">
+                    Periode Lalu: <span id="tpak-previous" class="font-semibold text-slate-700">0.00%</span>
+                    <span class="mx-1.5">•</span>
+                    Selisih: <span id="tpak-diff" class="font-semibold text-slate-700">0.00%</span>
+                </p>
+            </div>
+
+            <!-- TPT Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 relative overflow-hidden">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Indikator Utama</span>
+                        <h3 class="text-lg font-bold text-slate-800 mt-0.5">Tingkat Pengangguran Terbuka (TPT)</h3>
+                    </div>
+                    <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                        <i class="fa-solid fa-user-slash text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-baseline gap-3">
+                    <span id="tpt-current" class="text-3xl font-extrabold text-slate-900">0.00%</span>
+                    <span id="tpt-change" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                        <i class="fa-solid fa-arrow-down mr-1"></i> 0.00%
+                    </span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">
+                    Periode Lalu: <span id="tpt-previous" class="font-semibold text-slate-700">0.00%</span>
+                    <span class="mx-1.5">•</span>
+                    Selisih: <span id="tpt-diff" class="font-semibold text-slate-700">0.00%</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Chart 1: Komposisi Kegiatan -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-brand-600"></i> Komposisi Penduduk Usia Kerja
+                    </h3>
+                    <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium" id="chart1-subtitle">Periode Sekarang</span>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="chartKegiatan"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 2: Lapangan Usaha Utama -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-chart-simple text-brand-600"></i> Lapangan Usaha Terbesar
+                    </h3>
+                    <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium">Top Categories</span>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="chartLapanganUsaha"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Table Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-slate-50/50">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800">Tabel Monitoring Indikator Utama Sakernas</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Perbandingan indikator ketenagakerjaan antara dua periode pilihan</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="exportToCSV()" class="px-3 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-xl shadow-sm transition-colors flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-excel text-emerald-600"></i> Ekspor CSV
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left text-sm border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100/80 text-slate-700 uppercase text-xs tracking-wider border-b border-slate-200">
+                            <th class="py-3.5 px-4 font-bold min-w-[240px]">Indikator Ketenagakerjaan</th>
+                            <th class="py-3.5 px-4 font-bold text-right min-w-[120px]" id="th-periode-lalu">Periode Lalu</th>
+                            <th class="py-3.5 px-4 font-bold text-right min-w-[120px]" id="th-periode-sekarang">Periode Sekarang</th>
+                            <th class="py-3.5 px-4 font-bold text-right min-w-[110px]">Selisih</th>
+                            <th class="py-3.5 px-4 font-bold text-center min-w-[100px]">Kategori</th>
+                            <th class="py-3.5 px-4 font-bold text-right min-w-[100px]">% Persentase</th>
+                            <th class="py-3.5 px-4 font-bold min-w-[280px]">Penjelasan / Analisis Otomatis</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-slate-100">
+                        <!-- Content will be rendered dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            &copy; 2026 Dashboard Monitoring Sakernas - BPS Provinsi Kepulauan Bangka Belitung. All rights reserved.
+        </div>
+    </footer>
+
+    <script>
+        // Config Backend API URL (Bisa diisi URL Google Apps Script jika ada)
+        const GAS_API_URL = "";
+
+        // Data Base Dummy Realistis untuk Bangka Belitung (Satuan Jiwa / Orang)
+        // Struktur data mencakup variabel Kabupaten / Kota
+        const kabupatenList = [
+            "TOTAL", "Kab. Bangka", "Kab. Belitung", "Kab. Bangka Selatan",
+            "Kab. Bangka Tengah", "Kab. Bangka Barat", "Kab. Belitung Timur", "Kota Pangkalpinang"
+        ];
+
+        // Generator Data Dummy Tersinkron
+        function generateDummyDatabase() {
+            const periodes = ["Agustus 2023", "Februari 2024", "Agustus 2024", "Februari 2025"];
+            const jks = ["TOTAL", "Laki-laki", "Perempuan"];
+            const wilayahs = ["TOTAL", "Perkotaan", "Perdesaan"];
+
+            const db = {};
+
+            periodes.forEach((p, pIdx) => {
+                db[p] = {};
+                jks.forEach(jk => {
+                    db[p][jk] = {};
+                    wilayahs.forEach(w => {
+                        db[p][jk][w] = {};
+                        
+                        kabupatenList.forEach((kab, kIdx) => {
+                            // Scale factor untuk membagi angka total ke kabupaten
+                            let scale = 1.0;
+                            if (kab === "TOTAL") scale = 1.0;
+                            else if (kab === "Kota Pangkalpinang") scale = 0.18;
+                            else if (kab === "Kab. Bangka") scale = 0.22;
+                            else scale = 0.10;
+
+                            // Scale JK & Wilayah
+                            if (jk === "Laki-laki") scale *= 0.52;
+                            if (jk === "Perempuan") scale *= 0.48;
+                            if (w === "Perkotaan") scale *= 0.58;
+                            if (w === "Perdesaan") scale *= 0.42;
+
+                            // Trend pertumbuhan seiring waktu
+                            const growth = 1 + (pIdx * 0.015);
+
+                            const bekerja = Math.round(720000 * scale * growth);
+                            const pengangguran = Math.round(35000 * scale * (1 - (pIdx * 0.02)));
+                            const sekolah = Math.round(85000 * scale);
+                            const mengurusRT = Math.round(210000 * scale);
+                            const lainnya = Math.round(45000 * scale);
+
+                            db[p][jk][w][kab] = {
+                                kegiatan: {
+                                    bekerja: bekerja,
+                                    pengangguran: pengangguran,
+                                    sekolah: sekolah,
+                                    mengurusRT: mengurusRT,
+                                    lainnya: lainnya
+                                },
+                                lapanganUsaha: {
+                                    "A. Pertanian, Kehutanan & Perikanan": Math.round(bekerja * 0.24),
+                                    "B. Pertambangan & Penggalian": Math.round(bekerja * 0.13),
+                                    "C. Industri Pengolahan": Math.round(bekerja * 0.08),
+                                    "D. Pengadaan Listrik & Gas": Math.round(bekerja * 0.005),
+                                    "E. Pengadaan Air & Pengolahan Sampah": Math.round(bekerja * 0.005),
+                                    "F. Konstruksi": Math.round(bekerja * 0.07),
+                                    "G. Perdagangan Besar & Eceran": Math.round(bekerja * 0.18),
+                                    "H. Pengangkutan & Pergudangan": Math.round(bekerja * 0.04),
+                                    "I. Penyediaan Akomodasi & Makan Minum": Math.round(bekerja * 0.06),
+                                    "J. Informasi & Komunikasi": Math.round(bekerja * 0.015),
+                                    "K. Jasa Keuangan & Asuransi": Math.round(bekerja * 0.015),
+                                    "L. Real Estat": Math.round(bekerja * 0.005),
+                                    "M,N. Jasa Perusahaan": Math.round(bekerja * 0.02),
+                                    "O. Administrasi Pemerintahan": Math.round(bekerja * 0.05),
+                                    "P. Jasa Pendidikan": Math.round(bekerja * 0.045),
+                                    "Q. Jasa Kesehatan & Kegiatan Sosial": Math.round(bekerja * 0.02),
+                                    "R,S,T,U. Jasa Lainnya": Math.round(bekerja * 0.02)
+                                },
+                                statusPekerjaan: {
+                                    "Berusaha Sendiri": Math.round(bekerja * 0.22),
+                                    "Berusaha Dibantu Pekerja Tidak Tetap": Math.round(bekerja * 0.16),
+                                    "Berusaha Dibantu Pekerja Tetap": Math.round(bekerja * 0.04),
+                                    "Buruh / Karyawan / Pegawai": Math.round(bekerja * 0.38),
+                                    "Pekerja Bebas di Pertanian": Math.round(bekerja * 0.07),
+                                    "Pekerja Bebas di Nonpertanian": Math.round(bekerja * 0.05),
+                                    "Pekerja Keluarga / Tidak Dibayar": Math.round(bekerja * 0.08)
+                                },
+                                pendidikan: {
+                                    "SD ke Bawah": Math.round(bekerja * 0.32),
+                                    "SMP": Math.round(bekerja * 0.22),
+                                    "SMA / SMK": Math.round(bekerja * 0.34),
+                                    "Diploma / Universitas": Math.round(bekerja * 0.12)
+                                }
+                            };
+                        });
+                    });
+                });
+            });
+
+            return db;
+        }
+
+        const globalData = generateDummyDatabase();
+        let chart1Instance = null;
+        let chart2Instance = null;
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+            updateDashboard();
+        });
+
+        function setupEventListeners() {
+            ['filter-periode-lalu', 'filter-periode-sekarang', 'filter-jk', 'filter-wilayah', 'filter-kabupaten'].forEach(id => {
+                document.getElementById(id).addEventListener('change', updateDashboard);
+            });
+        }
+
+        async function fetchData() {
+            if (!GAS_API_URL) {
+                updateDashboard();
+                return;
+            }
+
+            const statusEl = document.getElementById('data-status');
+            statusEl.className = "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20";
+            statusEl.innerHTML = `<span class="w-2 h-2 mr-1.5 bg-amber-400 rounded-full animate-ping"></span> Mengambil data API...`;
+
+            try {
+                const res = await fetch(GAS_API_URL);
+                const json = await res.json();
+                statusEl.className = "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                statusEl.innerHTML = `<span class="w-2 h-2 mr-1.5 bg-emerald-400 rounded-full"></span> Terhubung ke Apps Script`;
+            } catch (err) {
+                console.warn("Gagal terhubung ke API, menggunakan fallback dummy data.", err);
+                statusEl.className = "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-500/10 text-slate-300 border border-slate-500/20";
+                statusEl.innerHTML = `<span class="w-2 h-2 mr-1.5 bg-slate-400 rounded-full"></span> Data Fallback (Simulasi)`;
+            } finally {
+                updateDashboard();
+            }
+        }
+
+        function getFilteredData(periode) {
+            const jk = document.getElementById('filter-jk').value;
+            const w = document.getElementById('filter-wilayah').value;
+            const kab = document.getElementById('filter-kabupaten').value;
+
+            return globalData[periode]?.[jk]?.[w]?.[kab] || null;
+        }
+
+        function updateDashboard() {
+            const pLalu = document.getElementById('filter-periode-lalu').value;
+            const pSekarang = document.getElementById('filter-periode-sekarang').value;
+
+            document.getElementById('th-periode-lalu').innerText = pLalu;
+            document.getElementById('th-periode-sekarang').innerText = pSekarang;
+            document.getElementById('chart1-subtitle').innerText = pSekarang;
+
+            const dataLalu = getFilteredData(pLalu);
+            const dataSekarang = getFilteredData(pSekarang);
+
+            if (!dataLalu || !dataSekarang) return;
+
+            // Render Table Rows
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            // Section 1: Jenis Kegiatan
+            const kLalu = dataLalu.kegiatan;
+            const kSek = dataSekarang.kegiatan;
+
+            const akLalu = kLalu.bekerja + kLalu.pengangguran;
+            const akSek = kSek.bekerja + kSek.pengangguran;
+
+            const bakLalu = kLalu.sekolah + kLalu.mengurusRT + kLalu.lainnya;
+            const bakSek = kSek.sekolah + kSek.mengurusRT + kSek.lainnya;
+
+            const pukLalu = akLalu + bakLalu;
+            const pukSek = akSek + bakSek;
+
+            renderTableSectionHeader(tbody, "A. Penduduk Menurut Jenis Kegiatan Utama");
+            
+            renderTableRow(tbody, "1. Bekerja", kLalu.bekerja, kSek.bekerja, pukLalu, pukSek, "Naik Adalah Positif");
+            renderTableRow(tbody, "2. Pengangguran", kLalu.pengangguran, kSek.pengangguran, pukLalu, pukSek, "Turun Adalah Positif");
+            renderTableRow(tbody, "Angkatan Kerja (AK) [1+2]", akLalu, akSek, pukLalu, pukSek, "Naik Adalah Positif", true);
+            renderTableRow(tbody, "3. Sekolah", kLalu.sekolah, kSek.sekolah, pukLalu, pukSek, "Netral");
+            renderTableRow(tbody, "4. Mengurus Rumah Tangga", kLalu.mengurusRT, kSek.mengurusRT, pukLalu, pukSek, "Netral");
+            renderTableRow(tbody, "5. Lainnya", kLalu.lainnya, kSek.lainnya, pukLalu, pukSek, "Netral");
+            renderTableRow(tbody, "Bukan Angkatan Kerja (BAK) [3+4+5]", bakLalu, bakSek, pukLalu, pukSek, "Netral", true);
+            renderTableRow(tbody, "Penduduk Usia Kerja (PUK) [AK+BAK]", pukLalu, pukSek, pukLalu, pukSek, "Netral", true, true);
+
+            // Section 2: Lapangan Usaha
+            renderTableSectionHeader(tbody, "B. Penduduk Bekerja Menurut Lapangan Usaha Utama (KBLI 2025)");
+            Object.keys(dataSekarang.lapanganUsaha).forEach((lu) => {
+                const valLalu = dataLalu.lapanganUsaha[lu] || 0;
+                const valSek = dataSekarang.lapanganUsaha[lu] || 0;
+                renderTableRow(tbody, lu, valLalu, valSek, kLalu.bekerja, kSek.bekerja, "Naik Adalah Positif");
+            });
+
+            // Section 3: Status Pekerjaan
+            renderTableSectionHeader(tbody, "C. Penduduk Bekerja Menurut Status Pekerjaan Utama");
+            Object.keys(dataSekarang.statusPekerjaan).forEach((st) => {
+                const valLalu = dataLalu.statusPekerjaan[st] || 0;
+                const valSek = dataSekarang.statusPekerjaan[st] || 0;
+                renderTableRow(tbody, st, valLalu, valSek, kLalu.bekerja, kSek.bekerja, "Naik Adalah Positif");
+            });
+
+            // Section 4: Pendidikan Tertinggi
+            renderTableSectionHeader(tbody, "D. Penduduk Bekerja Menurut Pendidikan Tertinggi Ditamatan");
+            Object.keys(dataSekarang.pendidikan).forEach((edu) => {
+                const valLalu = dataLalu.pendidikan[edu] || 0;
+                const valSek = dataSekarang.pendidikan[edu] || 0;
+                renderTableRow(tbody, edu, valLalu, valSek, kLalu.bekerja, kSek.bekerja, "Naik Adalah Positif");
+            });
+
+            // Section 5: Indikator Utama (TPAK & TPT)
+            renderTableSectionHeader(tbody, "E. Indikator Utama Ketenagakerjaan");
+            
+            const tpakValLalu = (akLalu / pukLalu) * 100;
+            const tpakValSek = (akSek / pukSek) * 100;
+            renderRateRow(tbody, "TPAK (Tingkat Partisipasi Angkatan Kerja)", tpakValLalu, tpakValSek, "Naik Adalah Positif", "%");
+
+            const tptValLalu = (kLalu.pengangguran / akLalu) * 100;
+            const tptValSek = (kSek.pengangguran / akSek) * 100;
+            renderRateRow(tbody, "TPT (Tingkat Pengangguran Terbuka)", tptValLalu, tptValSek, "Turun Adalah Positif", "%");
+
+            // Update KPI Cards
+            updateKPICards(tpakValLalu, tpakValSek, tptValLalu, tptValSek);
+
+            // Render Charts
+            renderCharts(dataSekarang, akSek, bakSek);
+        }
+
+        function renderTableSectionHeader(tbody, title) {
+            const tr = document.createElement('tr');
+            tr.className = "bg-slate-200/60 font-bold text-slate-800 text-xs tracking-wide uppercase";
+            tr.innerHTML = `<td colspan="7" class="py-2.5 px-4">${title}</td>`;
+            tbody.appendChild(tr);
+        }
+
+        function renderTableRow(tbody, name, valLalu, valSek, totalLalu, totalSek, context, isBold = false, isHighlight = false) {
+            const selisih = valSek - valLalu;
+            const pctSek = totalSek > 0 ? (valSek / totalSek) * 100 : 0;
+            
+            let status = "Sama";
+            let badgeClass = "bg-slate-100 text-slate-600";
+
+            if (selisih > 0) {
+                status = "Naik";
+                badgeClass = context === "Turun Adalah Positif" ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700";
+            } else if (selisih < 0) {
+                status = "Turun";
+                badgeClass = context === "Turun Adalah Positif" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700";
+            }
+
+            const tr = document.createElement('tr');
+            tr.className = `hover:bg-slate-50 transition-colors ${isHighlight ? 'bg-emerald-50/40 font-semibold' : ''} ${isBold ? 'font-medium text-slate-900' : 'text-slate-700'}`;
+
+            // Auto Analysis Text
+            let analysisText = "";
+            if (selisih > 0) {
+                analysisText = `Mengalami kenaikan sebanyak ${Math.abs(selisih).toLocaleString('id-ID')} jiwa (${((selisih/valLalu)*100).toFixed(2)}%).`;
+            } else if (selisih < 0) {
+                analysisText = `Mengalami penurunan sebesar ${Math.abs(selisih).toLocaleString('id-ID')} jiwa (${Math.abs((selisih/valLalu)*100).toFixed(2)}%).`;
+            } else {
+                analysisText = `Tidak mengalami perubahan signifikan dibandingkan periode sebelumnya.`;
+            }
+
+            tr.innerHTML = `
+                <td class="py-3 px-4 ${isBold ? 'pl-4' : 'pl-7'}">${name}</td>
+                <td class="py-3 px-4 text-right font-mono">${valLalu.toLocaleString('id-ID')}</td>
+                <td class="py-3 px-4 text-right font-mono font-semibold">${valSek.toLocaleString('id-ID')}</td>
+                <td class="py-3 px-4 text-right font-mono ${selisih > 0 ? 'text-emerald-600' : selisih < 0 ? 'text-rose-600' : 'text-slate-500'}">
+                    ${selisih > 0 ? '+' : ''}${selisih.toLocaleString('id-ID')}
+                </td>
+                <td class="py-3 px-4 text-center">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${badgeClass}">
+                        ${status}
+                    </span>
+                </td>
+                <td class="py-3 px-4 text-right font-mono font-medium">${pctSek.toFixed(2)}%</td>
+                <td class="py-3 px-4 text-xs text-slate-500 leading-relaxed">${analysisText}</td>
+            `;
+
+            tbody.appendChild(tr);
+        }
+
+        function renderRateRow(tbody, name, rateLalu, rateSek, context, unit = "%") {
+            const selisih = rateSek - rateLalu;
+            
+            let status = "Sama";
+            let badgeClass = "bg-slate-100 text-slate-600";
+
+            if (selisih > 0) {
+                status = "Naik";
+                badgeClass = context === "Turun Adalah Positif" ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700";
+            } else if (selisih < 0) {
+                status = "Turun";
+                badgeClass = context === "Turun Adalah Positif" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700";
+            }
+
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50 font-semibold text-slate-900 bg-amber-50/20 border-t border-slate-200";
+
+            let analysisText = "";
+            if (selisih > 0) {
+                analysisText = `Meningkat sebesar ${Math.abs(selisih).toFixed(2)} % poin.`;
+            } else if (selisih < 0) {
+                analysisText = `Menurun sebesar ${Math.abs(selisih).toFixed(2)} % poin.`;
+            } else {
+                analysisText = `Tetap stabil dibanding periode sebelumnya.`;
+            }
+
+            tr.innerHTML = `
+                <td class="py-3.5 px-4">${name}</td>
+                <td class="py-3.5 px-4 text-right font-mono">${rateLalu.toFixed(2)}${unit}</td>
+                <td class="py-3.5 px-4 text-right font-mono text-brand-700 font-bold">${rateSek.toFixed(2)}${unit}</td>
+                <td class="py-3.5 px-4 text-right font-mono ${selisih > 0 ? 'text-emerald-600' : selisih < 0 ? 'text-rose-600' : 'text-slate-500'}">
+                    ${selisih > 0 ? '+' : ''}${selisih.toFixed(2)}%p
+                </td>
+                <td class="py-3.5 px-4 text-center">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${badgeClass}">
+                        ${status}
+                    </span>
+                </td>
+                <td class="py-3.5 px-4 text-right font-mono">-</td>
+                <td class="py-3.5 px-4 text-xs text-slate-600">${analysisText}</td>
+            `;
+
+            tbody.appendChild(tr);
+        }
+
+        function updateKPICards(tpakLalu, tpakSek, tptLalu, tptSek) {
+            // Update TPAK
+            const tpakDiff = tpakSek - tpakLalu;
+            document.getElementById('tpak-current').innerText = `${tpakSek.toFixed(2)}%`;
+            document.getElementById('tpak-previous').innerText = `${tpakLalu.toFixed(2)}%`;
+            document.getElementById('tpak-diff').innerText = `${tpakDiff >= 0 ? '+' : ''}${tpakDiff.toFixed(2)}%p`;
+            
+            const tpakBadge = document.getElementById('tpak-change');
+            if (tpakDiff >= 0) {
+                tpakBadge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800";
+                tpakBadge.innerHTML = `<i class="fa-solid fa-arrow-up mr-1"></i> +${tpakDiff.toFixed(2)}%p`;
+            } else {
+                tpakBadge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800";
+                tpakBadge.innerHTML = `<i class="fa-solid fa-arrow-down mr-1"></i> ${tpakDiff.toFixed(2)}%p`;
+            }
+
+            // Update TPT
+            const tptDiff = tptSek - tptLalu;
+            document.getElementById('tpt-current').innerText = `${tptSek.toFixed(2)}%`;
+            document.getElementById('tpt-previous').innerText = `${tptLalu.toFixed(2)}%`;
+            document.getElementById('tpt-diff').innerText = `${tptDiff >= 0 ? '+' : ''}${tptDiff.toFixed(2)}%p`;
+
+            const tptBadge = document.getElementById('tpt-change');
+            if (tptDiff <= 0) {
+                // TPT Turun adalah bagus (hijau)
+                tptBadge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800";
+                tptBadge.innerHTML = `<i class="fa-solid fa-arrow-down mr-1"></i> ${tptDiff.toFixed(2)}%p`;
+            } else {
+                tptBadge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800";
+                tptBadge.innerHTML = `<i class="fa-solid fa-arrow-up mr-1"></i> +${tptDiff.toFixed(2)}%p`;
+            }
+        }
+
+        function renderCharts(dataSekarang, akVal, bakVal) {
+            // Chart 1: Pie/Doughnut Chart Kegiatan
+            const ctx1 = document.getElementById('chartKegiatan').getContext('2d');
+            if (chart1Instance) chart1Instance.destroy();
+
+            chart1Instance = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Bekerja', 'Pengangguran', 'Sekolah', 'Mengurus Rumah Tangga', 'Lainnya'],
+                    datasets: [{
+                        data: [
+                            dataSekarang.kegiatan.bekerja,
+                            dataSekarang.kegiatan.pengangguran,
+                            dataSekarang.kegiatan.sekolah,
+                            dataSekarang.kegiatan.mengurusRT,
+                            dataSekarang.kegiatan.lainnya
+                        ],
+                        backgroundColor: [
+                            '#22c55e', // Bekerja - Emerald
+                            '#f43f5e', // Pengangguran - Rose
+                            '#3b82f6', // Sekolah - Blue
+                            '#f59e0b', // Mengurus RT - Amber
+                            '#94a3b8'  // Lainnya - Slate
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { boxWidth: 12, font: { family: 'Inter', size: 11 } }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+
+            // Chart 2: Top Lapangan Usaha (Bar Chart Horizontal)
+            const ctx2 = document.getElementById('chartLapanganUsaha').getContext('2d');
+            if (chart2Instance) chart2Instance.destroy();
+
+            // Sort & take Top 5
+            const luEntries = Object.entries(dataSekarang.lapanganUsaha)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            const labelsLU = luEntries.map(e => e[0].length > 25 ? e[0].substring(0, 22) + '...' : e[0]);
+            const valuesLU = luEntries.map(e => e[1]);
+
+            chart2Instance = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: labelsLU,
+                    datasets: [{
+                        label: 'Jumlah Pekerja (Jiwa)',
+                        data: valuesLU,
+                        backgroundColor: '#16a34a',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Inter', size: 10 } }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Inter', size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Export to CSV Functionality
+        function exportToCSV() {
+            const pLalu = document.getElementById('filter-periode-lalu').value;
+            const pSek = document.getElementById('filter-periode-sekarang').value;
+            const kab = document.getElementById('filter-kabupaten').value;
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += `Dashboard Monitoring Sakernas - ${kab}\n`;
+            csvContent += `Indikator,Periode Lalu (${pLalu}),Periode Sekarang (${pSek}),Selisih\n`;
+
+            const rows = document.querySelectorAll("#table-body tr");
+            rows.forEach(row => {
+                const cols = row.querySelectorAll("td");
+                if (cols.length >= 4) {
+                    const indikator = `"${cols[0].innerText.trim()}"`;
+                    const valLalu = `"${cols[1].innerText.trim().replace(/\./g, '')}"`;
+                    const valSek = `"${cols[2].innerText.trim().replace(/\./g, '')}"`;
+                    const selisih = `"${cols[3].innerText.trim().replace(/\./g, '')}"`;
+                    csvContent += `${indikator},${valLalu},${valSek},${selisih}\n`;
+                }
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Sakernas_Monitoring_${kab}_${pSek}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
